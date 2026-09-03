@@ -1,0 +1,6 @@
+{
+  "name": "Spa My Car",
+  "description": "Professional car care, detailing, touchless wash, interior cleaning, and appointment booking website matching Vwash / Spa My Car specifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
