@@ -4,25 +4,25 @@ export const serviceFeatures: ServiceFeature[] = [
   {
     id: 'touchless',
     title: 'Touchless Wash',
-    description: 'Uses high-pressure water and detergents automatic.',
+    description: 'High-pressure deionized water and active snow foam to eliminate dirt without brushes.',
     iconName: 'touchless',
   },
   {
     id: 'interior',
     title: 'Interior Cleaning',
-    description: 'Use an interior cleaner for dashboard and door panels.',
+    description: 'Pressurized antimicrobial steam extraction for carpets, seats, and AC vents.',
     iconName: 'interior',
   },
   {
     id: 'automatic',
-    title: 'Automatic Wash',
-    description: 'Quick and convenient, ideal for regular washes.',
+    title: 'Precision Machine Polish',
+    description: 'Dual-action machine polishing removes swirl marks, haze, and restores clear coat depth.',
     iconName: 'automatic',
   },
   {
     id: 'waxing',
     title: 'Waxing & Sealing',
-    description: 'Consider ceramic coatings for longer-lasting protection.',
+    description: '9H ceramic coating and hydrophobic polymer sealant for long-lasting gloss protection.',
     iconName: 'waxing',
   },
 ];
@@ -31,25 +31,25 @@ export const processSteps: ProcessStep[] = [
   {
     stepNumber: '01.',
     title: 'Booking',
-    description: 'Some platforms may offer online booking functionality.',
+    description: 'Book your slot online or call us directly. Select your car model, desired detailing service, and convenient time.',
     iconName: 'booking',
   },
   {
     stepNumber: '02.',
     title: 'Inspection',
-    description: 'Choose a car wash that is conveniently located for you.',
+    description: 'When you arrive, our master detailer thoroughly inspects your car’s paint, glass, and interior to address your queries and tailor the treatment.',
     iconName: 'inspection',
   },
   {
     stepNumber: '03.',
     title: 'Washing',
-    description: 'Compare prices from different providers to find the best value.',
+    description: 'Your car undergoes our multi-stage scratch-free snow foam bath, pure deionized rinse, and deep steam sanitization in our dedicated bays.',
     iconName: 'washing',
   },
   {
     stepNumber: '04.',
     title: 'Completion',
-    description: 'Check customer reviews and ratings to gauge the quality of service.',
+    description: 'We perform a final multi-point quality check, apply protective tyre & trim dressings, and hand over your spotless, showroom-ready car.',
     iconName: 'completion',
   },
 ];
