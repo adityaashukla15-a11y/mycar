@@ -5,10 +5,16 @@
     scroll-behavior: smooth;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
+
+  h1, h2, h3, h4, .font-heading, .font-display {
+    font-family: 'Montserrat', 'Cabinet Grotesk', 'Outfit', 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
 }
 
-.font-display {
-  font-family: 'Cabinet Grotesk', 'Space Grotesk', sans-serif;
+.font-display, .font-heading {
+  font-family: 'Montserrat', 'Cabinet Grotesk', 'Outfit', 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 @keyframes marquee {

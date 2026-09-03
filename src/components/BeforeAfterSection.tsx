@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 interface BeforeAfterSectionProps {
@@ -49,26 +49,82 @@ const DETAILING_PAIRS: DetailingPair[] = [
 export const BeforeAfterSection: React.FC<BeforeAfterSectionProps> = ({ onOpenAppointment, onNavigateAbout }) => {
   const [activeTab, setActiveTab] = useState<'exterior' | 'interior' | 'wheels'>('exterior');
   const [sliderPosition, setSliderPosition] = useState(50);
-  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const animFrameRef = useRef<number | null>(null);
 
   const activePair = DETAILING_PAIRS.find((p) => p.id === activeTab) || DETAILING_PAIRS[0];
 
-  const handleMove = useCallback((clientX: number) => {
+  // Preload all images so switching tabs is instant with zero lag
+  useEffect(() => {
+    DETAILING_PAIRS.forEach((item) => {
+      const img1 = new Image();
+      img1.src = item.beforeImg;
+      const img2 = new Image();
+      img2.src = item.afterImg;
+    });
+  }, []);
+
+  const updatePosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
     const x = clientX - rect.left;
     const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
     setSliderPosition(percentage);
   }, []);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    handleMove(e.touches[0].clientX);
+  // Global and window-level drag handlers
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      updatePosition(e.clientX);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current || !e.touches[0]) return;
+      updatePosition(e.touches[0].clientX);
+    };
+
+    const handleGlobalMouseUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+      }
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: true });
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchend', handleGlobalMouseUp);
+    window.addEventListener('touchcancel', handleGlobalMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchend', handleGlobalMouseUp);
+      window.removeEventListener('touchcancel', handleGlobalMouseUp);
+    };
+  }, [updatePosition]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updatePosition(e.clientX);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    handleMove(e.clientX);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    updatePosition(e.clientX);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingRef.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
   };
 
   return (
@@ -108,63 +164,62 @@ export const BeforeAfterSection: React.FC<BeforeAfterSectionProps> = ({ onOpenAp
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          {/* Left Column: Interactive Before / After Slider */}
+          {/* Left Column: Interactive Before / After Slider with GPU accelerated clipping */}
           <div className="relative">
             <div
               ref={containerRef}
-              className="relative aspect-[3/2] rounded-3xl overflow-hidden shadow-2xl border border-zinc-200/90 select-none cursor-ew-resize group bg-zinc-900"
-              onMouseDown={() => setIsDragging(true)}
-              onMouseUp={() => setIsDragging(false)}
-              onMouseLeave={() => setIsDragging(false)}
-              onMouseMove={handleMouseMove}
-              onTouchMove={handleTouchMove}
-              onClick={(e) => handleMove(e.clientX)}
+              className="relative aspect-[3/2] rounded-3xl overflow-hidden shadow-2xl border border-zinc-200/90 select-none cursor-ew-resize group bg-zinc-900 touch-none will-change-transform"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
             >
               {/* Clean "AFTER" Car Image (Base layer) */}
               <img
                 src={activePair.afterImg}
                 alt={`${activePair.title} - After detailing`}
-                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-300"
+                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                 draggable={false}
+                loading="eager"
               />
 
-              {/* "BEFORE" Car Image (Clipped layer) */}
-              <div
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{ width: `${sliderPosition}%` }}
-              >
-                <div className="relative w-full h-full" style={{ width: containerRef.current?.offsetWidth || '100%' }}>
-                  <img
-                    src={activePair.beforeImg}
-                    alt={`${activePair.title} - Before detailing`}
-                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-300"
-                    draggable={false}
-                  />
-                </div>
-              </div>
+              {/* "BEFORE" Car Image (Hardware-accelerated CSS polygon clip-path with zero reflow) */}
+              <img
+                src={activePair.beforeImg}
+                alt={`${activePair.title} - Before detailing`}
+                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[clip-path]"
+                style={{
+                  clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
+                  WebkitClipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
+                }}
+                draggable={false}
+                loading="eager"
+              />
 
               {/* Badges */}
-              <div className="absolute top-4 left-4 z-10 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider shadow-lg border border-white/10">
+              <div className="absolute top-4 left-4 z-10 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider shadow-lg border border-white/10 pointer-events-none">
                 BEFORE
               </div>
-              <div className="absolute top-4 right-4 z-10 px-3.5 py-1.5 rounded-full bg-[#ec7a1b] text-white text-[11px] font-black uppercase tracking-wider shadow-lg shadow-orange-950/20">
+              <div className="absolute top-4 right-4 z-10 px-3.5 py-1.5 rounded-full bg-[#ec7a1b] text-white text-[11px] font-black uppercase tracking-wider shadow-lg shadow-orange-950/20 pointer-events-none">
                 AFTER CLEAN
               </div>
 
               {/* Bottom Feature Tag */}
-              <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-md">
+              <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-md pointer-events-none">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#ec7a1b]" />
                 <span>{activePair.badge}</span>
               </div>
 
-              {/* Vertical Divider Line */}
+              {/* Vertical Divider Line positioned at sliderPosition % */}
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-white z-20 shadow-[0_0_12px_rgba(0,0,0,0.7)]"
-                style={{ left: `${sliderPosition}%` }}
+                className="absolute top-0 bottom-0 w-0.5 bg-white z-20 shadow-[0_0_12px_rgba(0,0,0,0.8)] pointer-events-none"
+                style={{
+                  left: `${sliderPosition}%`,
+                }}
               >
                 {/* Drag Handle Button with < > arrows */}
-                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-11 h-11 rounded-full bg-white text-slate-800 shadow-2xl flex items-center justify-center border-2 border-slate-300 cursor-ew-resize hover:scale-110 active:scale-95 transition-transform">
-                  <div className="flex items-center gap-0.5 text-xs font-black tracking-tight">
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-11 h-11 rounded-full bg-white text-slate-900 shadow-2xl flex items-center justify-center border-2 border-slate-300 pointer-events-none">
+                  <div className="flex items-center gap-0.5 text-xs font-black tracking-tight select-none">
                     <span>‹</span>
                     <span>›</span>
                   </div>

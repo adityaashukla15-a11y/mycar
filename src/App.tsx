@@ -7,6 +7,7 @@ import { WorkshopGallery } from './components/WorkshopGallery';
 import { HowItWorksSteps } from './components/HowItWorksSteps';
 import { PricingSection } from './components/PricingSection';
 import { CustomerReviewsBanner } from './components/CustomerReviewsBanner';
+import { WhyUsSection } from './components/WhyUsSection';
 import { FaqSection } from './components/FaqSection';
 import { ContactUsPage } from './components/ContactUsPage';
 import { Footer } from './components/Footer';
@@ -84,6 +85,11 @@ export default function App() {
 
             {/* Workshop & Detailing Gallery */}
             <WorkshopGallery
+              onOpenAppointment={() => handleNavigatePage('contact')}
+            />
+
+            {/* Why Us: Detailed Value Propositions & Technical Strengths */}
+            <WhyUsSection
               onOpenAppointment={() => handleNavigatePage('contact')}
             />
 
